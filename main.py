@@ -61,3 +61,8 @@ if __name__ == "__main__":
 
     while True:
         time.sleep(100)
+if __name__ == "__main__":
+    keep_alive()
+    application = ApplicationBuilder().token(TOKEN).build()
+    print("Bot is running...")
+    application.run_polling()
