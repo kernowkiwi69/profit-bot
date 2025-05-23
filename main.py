@@ -66,3 +66,4 @@ if __name__ == "__main__":
     application = ApplicationBuilder().token(TOKEN).build()
     print("Bot is running...")
     application.run_polling()
+print("LoinsProfitBot is live and ready")
