@@ -1,77 +1,49 @@
-import time
-import threading
+import os
+import asyncio
 from web3 import Web3
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from keep_alive import keep_alive
-import os
-import pytz
-from datetime import datetime
 from eth_account import Account
+from datetime import datetime
 
+# Enable HD wallet feature
 Account.enable_unaudited_hdwallet_features()
 
+# Load env variables
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-OWNER_CHAT_ID = os.getenv("OWNER_CHAT_ID")
+OWNER_CHAT_ID = int(os.getenv("OWNER_CHAT_ID"))
 WALLET_SEED = os.getenv("METAMASK_SEED")
 
+# Create wallet
 wallet = Account.from_mnemonic(WALLET_SEED)
 wallet_address = wallet.address
 
-def get_uk_time():
-    return datetime.now(pytz.timezone("Europe/London")).strftime('%Y-%m-%d %H:%M:%S')
-
-def scan_airdrops():
-    while True:
-        print(f"[{get_uk_time()}] Scanning airdrops for {wallet_address}")
-        time.sleep(1800)
-
-def run_sniper():
-    while True:
-        print(f"[{get_uk_time()}] Sniper active - monitoring token listings")
-        time.sleep(60)
-
-def scan_casino_bonuses():
-    while True:
-        print(f"[{get_uk_time()}] Checking casino bonus loops")
-        time.sleep(600)
-
-def evolve_bot():
-    while True:
-        print(f"[{get_uk_time()}] Evaluating growth strategy...")
-        time.sleep(3600)
-
+# /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_chat.id) == OWNER_CHAT_ID:
-        await update.message.reply_text(f"Bot running. Wallet: {wallet_address}\nUK Time: {get_uk_time()}")
+    if update.effective_chat.id == OWNER_CHAT_ID:
+        await update.message.reply_text("Bot is live and listening.")
     else:
-        await update.message.reply_text("Unauthorized.")
+        await update.message.reply_text("Access denied.")
 
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
+# /wallet command
+async def wallet_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.id == OWNER_CHAT_ID:
+        await update.message.reply_text(f"Wallet address: {wallet_address}")
+    else:
+        await update.message.reply_text("Access denied.")
 
-if __name__ == "__main__":
+# Main function
+async def main():
     keep_alive()
+    app = ApplicationBuilder().token(TOKEN).build()
 
-    threading.Thread(target=scan_airdrops, daemon=True).start()
-    threading.Thread(target=run_sniper, daemon=True).start()
-    threading.Thread(target=scan_casino_bonuses, daemon=True).start()
-    threading.Thread(target=evolve_bot, daemon=True).start()
-    threading.Thread(target=app.run_polling, daemon=True).start()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("wallet", wallet_info))
 
-    while True:
-        time.sleep(100)
+    print("Bot is polling...")
+    await app.run_polling()
+
+# Run
 if __name__ == "__main__":
-    keep_alive()
-    application = ApplicationBuilder().token(TOKEN).build()
-    print("Bot is running...")
-    application.run_polling()
-print("LoinsProfitBot is live and ready")
-def send_message(text):
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    chat_id = os.getenv("OWNER_CHAT_ID")
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
-    requests.post(url, data=payload)
-
-send_message("✅ LoinsProfitBot is LIVE and connected.")
+    asyncio.run(main())
